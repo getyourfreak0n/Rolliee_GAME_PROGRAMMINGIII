@@ -11,6 +11,8 @@ public class PlatformMover : MonoBehaviour
     private Vector3[] _waypointPositions;
     private int _currentWaypointIndex;
     private float _radius = 0.05f;
+    private Vector3 _velocity = Vector3.zero;
+    private float _smoothingTime = 0.8f;
     #endregion
     
     private void Start()
@@ -26,8 +28,11 @@ public class PlatformMover : MonoBehaviour
     {
         if (waypoints.Length == 0) return;
         
-        transform.position = Vector3.MoveTowards
-            (transform.position, _waypointPositions[_currentWaypointIndex], maxDistance * Time.fixedDeltaTime);
+        transform.position = Vector3.SmoothDamp(
+            transform.position, 
+            _waypointPositions[_currentWaypointIndex], 
+            ref _velocity, 
+            _smoothingTime);
 
         if (Vector3.Distance(transform.position, _waypointPositions[_currentWaypointIndex]) < _radius)
         {
