@@ -1,44 +1,55 @@
+using System.Collections;
 using UnityEngine;
 
-public class PlatformMover : MonoBehaviour
+public class PlatformMover : MonoBehaviour, IPlatformMover
 {
-    #region Serialized Fields
-    [SerializeField] Transform[] waypoints;
-    [SerializeField] float maxDistance = 2f;
-    #endregion
+   [SerializeField] Transform[] _transforms;
+   [SerializeField] float _speed = 0.3f;
+   [SerializeField] float _startDelay = 1.0f;
+   [SerializeField] float _waitDelay = 1.0f;
 
-    #region Private Fields
-    private Vector3[] _waypointPositions;
-    private int _currentWaypointIndex;
-    private float _radius = 0.05f;
-    private Vector3 _velocity = Vector3.zero;
-    private float _smoothingTime = 0.8f;
-    #endregion
-    
-    private void Start()
-    {
-        _waypointPositions = new Vector3[waypoints.Length];
-        for (int i = 0; i < waypoints.Length; i++)
-        {
-            _waypointPositions[i] = waypoints[i].position;
-        }
-    }
+   Vector3 targetA;
+   Vector3 targetB;
+   Vector3 currentTarget;
+   Rigidbody _rb;
 
-    private void FixedUpdate()
-    {
-        if (waypoints.Length == 0) return;
-        
-        transform.position = Vector3.SmoothDamp(
-            transform.position, 
-            _waypointPositions[_currentWaypointIndex], 
-            ref _velocity, 
-            _smoothingTime);
+   void Awake()
+   {
+      _rb = GetComponent<Rigidbody>();
 
-        if (Vector3.Distance(transform.position, _waypointPositions[_currentWaypointIndex]) < _radius)
-        {
-            _currentWaypointIndex = (_currentWaypointIndex + 1) % _waypointPositions.Length;
-        }
-        
-        
-    }
+      targetA = _transforms[0].position;
+      targetB = _transforms[1].position;
+
+      currentTarget = targetB;
+   }
+
+   void Start()
+   {
+      StartCoroutine(MoveRoutine());
+   }
+
+   private IEnumerator MoveRoutine()
+   {
+      yield return new WaitForSeconds(_startDelay);
+
+      while (true)
+      {
+         while (Vector3.Distance(_rb.position, currentTarget) > 0.1f)
+         {
+            Move();
+            yield return new WaitForFixedUpdate();
+         }
+
+         yield return new WaitForSeconds(_waitDelay);
+         currentTarget = (currentTarget == targetA) ? targetB : targetA;
+      }
+   }
+
+   public void Move()
+   {
+      Vector3 moveValue = Vector3.MoveTowards
+         (_rb.position, currentTarget, _speed * Time.fixedDeltaTime);
+
+      _rb.MovePosition(moveValue);
+   }
 }
